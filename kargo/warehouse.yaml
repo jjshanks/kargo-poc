@@ -1,0 +1,10 @@
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: kargo-joshua
+  namespace: kargo-joshua
+spec:
+  subscriptions:
+  - image:
+      repoURL: ghcr.io/${GITHUB_USERNAME}/guestbook
+      semverConstraint : ">=0.0.0"

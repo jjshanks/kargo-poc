@@ -1,0 +1,39 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: multi-cluster-app
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: joshua-kind-dev
+            environment: dev
+          - cluster: joshua-kind-staging
+            environment: staging
+          - cluster: joshua-kind-prod
+            environment: prod
+  template:
+    metadata:
+      name: '{{cluster}}-app'
+      annotations:
+        kargo.akuity.io/authorized-stage: "kargo-joshua:{{environment}}"
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/jjshanks/argocd-example-apps.git
+        targetRevision: master
+        path: helm-guestbook
+        helm:
+          valueFiles:
+            - values.yaml
+            - values.{{environment}}.yaml
+      destination:
+        server: http://cluster-{{cluster}}:8001
+        namespace: default
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true

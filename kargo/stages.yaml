@@ -1,0 +1,130 @@
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: dev
+  namespace: kargo-joshua
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: kargo-joshua
+    sources:
+      direct: true
+  promotionTemplate:
+    spec:
+      steps:
+      - uses: git-clone
+        config:
+          repoURL: ${GITOPS_REPO_URL}
+          checkout:
+          - branch: master
+            path: ./src
+      - uses: helm-update-image
+        as: update-image
+        config:
+          path: ./src/charts/guestbook/values.dev.yaml
+          images:
+          - image: ghcr.io/${GITHUB_USERNAME}/guestbook
+            key: image.tag
+            value: Tag
+      - uses: git-commit
+        as: commit
+        config:
+          path: ./src
+          message: "Update image tags"
+      - uses: git-push
+        config:
+          path: ./src
+          targetBranch: master
+      - uses: argocd-update
+        config:
+          apps:
+          - name: joshua-kind-dev-app
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: staging
+  namespace: kargo-joshua
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: kargo-joshua
+    sources:
+      stages:
+      - dev
+  promotionTemplate:
+    spec:
+      steps:
+      - uses: git-clone
+        config:
+          repoURL: ${GITOPS_REPO_URL}
+          checkout:
+          - branch: master
+            path: ./src
+      - uses: helm-update-image
+        as: update-image
+        config:
+          path: ./src/charts/guestbook/values.staging.yaml
+          images:
+          - image: ghcr.io/${GITHUB_USERNAME}/guestbook
+            key: image.tag
+            value: Tag
+      - uses: git-commit
+        as: commit
+        config:
+          path: ./src
+          message: "Update image tags"
+      - uses: git-push
+        config:
+          path: ./src
+          targetBranch: master
+      - uses: argocd-update
+        config:
+          apps:
+          - name: joshua-kind-staging-app
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: prod
+  namespace: kargo-joshua
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: kargo-joshua
+    sources:
+      stages:
+      - staging
+  promotionTemplate:
+    spec:
+      steps:
+      - uses: git-clone
+        config:
+          repoURL: ${GITOPS_REPO_URL}
+          checkout:
+          - branch: master
+            path: ./src
+      - uses: helm-update-image
+        as: update-image
+        config:
+          path: ./src/charts/guestbook/values.prod.yaml
+          images:
+          - image: ghcr.io/${GITHUB_USERNAME}/guestbook
+            key: image.tag
+            value: Tag
+      - uses: git-commit
+        as: commit
+        config:
+          path: ./src
+          message: "Update image tags"
+      - uses: git-push
+        config:
+          path: ./src
+          targetBranch: master
+      - uses: argocd-update
+        config:
+          apps:
+          - name: joshua-kind-prod-app

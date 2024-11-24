@@ -1,2 +1,12 @@
+replicaCount: 1
+
 image:
-  tag: 0.0.1
+  repository: ghcr.io/jjshanks/guestbook
+  tag: v0.0.1
+  pullPolicy: IfNotPresent
+
+containerPort: 3000
+
+service:
+  type: ClusterIP
+  port: 80
